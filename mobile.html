@@ -81,7 +81,9 @@ try { myProfile = JSON.parse(localStorage.getItem('kviz_mobile_profile')) } catc
 let gameState = { phase: 'waiting', question: null, answers: {} }
 let myAnswer = null
 
-const socket = io()
+// Připojíme se na stejný server co servíruje tuto stránku (funguje lokálně i na Railway)
+const SOCKET_URL = window.SOCKET_URL || window.location.origin
+const socket = io(SOCKET_URL)
 
 socket.on('game-state', (state) => {
   const prevQId = gameState.question?.id

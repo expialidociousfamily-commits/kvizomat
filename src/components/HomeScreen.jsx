@@ -13,9 +13,20 @@ export default function HomeScreen({ streak, points, stats, profiles, onStart, o
   }
 
   const [qrDataUrl, setQrDataUrl] = useState('')
-  const mobileUrl = `http://${window.location.hostname}:3001/join`
+  const [mobileUrl, setMobileUrl] = useState(
+    `${import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001'}/join`
+  )
 
   useEffect(() => {
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || `http://${window.location.hostname}:3001`
+    fetch(`${socketUrl}/ip`)
+      .then(r => r.json())
+      .then(d => setMobileUrl(`${d.url}/join`))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!mobileUrl) return
     QRCode.toDataURL(mobileUrl, { width: 96, margin: 1, color: { dark: '#ffffff', light: '#070b14' } })
       .then(setQrDataUrl)
       .catch(() => {})
@@ -128,7 +139,7 @@ export default function HomeScreen({ streak, points, stats, profiles, onStart, o
           <img src={qrDataUrl} alt="QR" style={{ width: 64, height: 64, borderRadius: 6 }} />
           <div>
             <div style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>📱 Mobilní odpovídání</div>
-            <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{window.location.hostname}:3001/join</div>
+            <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{mobileUrl}</div>
           </div>
         </div>
       )}

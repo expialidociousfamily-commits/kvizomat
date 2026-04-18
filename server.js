@@ -15,7 +15,7 @@ function getLocalIP() {
 }
 
 const app = express()
-app.use(cors())
+app.use(cors({ origin: '*' }))
 app.use(express.static('public'))
 
 const server = createServer(app)
@@ -31,8 +31,14 @@ app.get('/join', (req, res) => {
   res.sendFile(path.join(__dirname, 'mobile.html'))
 })
 
+app.get('/health', (req, res) => res.json({ status: 'ok' }))
+
 app.get('/ip', (req, res) => {
-  res.json({ ip: getLocalIP() })
+  res.json({
+    url: process.env.RAILWAY_PUBLIC_DOMAIN
+      ? 'https://' + process.env.RAILWAY_PUBLIC_DOMAIN
+      : 'http://' + getLocalIP() + ':3001'
+  })
 })
 
 io.on('connection', (socket) => {
@@ -57,8 +63,13 @@ io.on('connection', (socket) => {
   socket.emit('game-state', gameState)
 })
 
-server.listen(3001, '0.0.0.0', () => {
+const PORT = process.env.PORT || 3001
+server.listen(PORT, '0.0.0.0', () => {
   const ip = getLocalIP()
-  console.log('Socket server běží na portu 3001')
-  console.log(`Mobily se připojí na: http://${ip}:3001/join`)
+  console.log(`Socket server běží na portu ${PORT}`)
+  if (!process.env.RAILWAY_PUBLIC_DOMAIN) {
+    console.log(`Mobily se připojí na: http://${ip}:${PORT}/join`)
+  } else {
+    console.log(`Mobily se připojí na: https://${process.env.RAILWAY_PUBLIC_DOMAIN}/join`)
+  }
 })

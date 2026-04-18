@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { io as connectSocket } from 'socket.io-client'
 
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001'
 const TIMER_SECONDS = 120 // 2 minutes
 
 export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
   const [stage, setStage] = useState('thinking') // thinking | answering | done
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS)
   const [selectedAnswers, setSelectedAnswers] = useState({})
-  const [mobileIP, setMobileIP] = useState(window.location.hostname)
+  const [mobileJoinUrl, setMobileJoinUrl] = useState(`${SOCKET_URL}/join`)
   const socketRef = useRef(null)
 
   useEffect(() => {
@@ -22,15 +23,15 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
 
   useEffect(() => {
     if (stage !== 'answering') return
-    const socket = connectSocket(`http://${window.location.hostname}:3001`)
+    const socket = connectSocket(SOCKET_URL)
     socketRef.current = socket
     socket.emit('start-question', { id: question.id, options: question.options })
     socket.on('answer-received', ({ profileId, answer }) => {
       setSelectedAnswers(prev => ({ ...prev, [profileId]: answer }))
     })
-    fetch(`http://${window.location.hostname}:3001/ip`)
+    fetch(`${SOCKET_URL}/ip`)
       .then(r => r.json())
-      .then(d => setMobileIP(d.ip))
+      .then(d => setMobileJoinUrl(`${d.url}/join`))
       .catch(() => {})
     return () => {
       socket.emit('end-question')
@@ -183,7 +184,7 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
               background: 'rgba(255,255,255,0.04)',
               color: 'var(--muted)', fontSize: '0.82rem', textAlign: 'center'
             }}>
-              📱 Mobily: <strong style={{ color: 'var(--text)' }}>{mobileIP}:3001/join</strong>
+              📱 Mobily: <strong style={{ color: 'var(--text)' }}>{mobileJoinUrl}</strong>
             </div>
 
             <button
