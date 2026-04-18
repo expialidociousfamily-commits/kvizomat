@@ -1,7 +1,9 @@
-const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY
-
 export async function generateTeaching(question) {
+  const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY
+  console.log('API KEY exists:', !!API_KEY, API_KEY?.slice(0, 10))
+
   if (!API_KEY) {
+    console.log('Chybí API klíč — používám fallback')
     return getFallback(question)
   }
 
@@ -25,6 +27,7 @@ Tvůj úkol:
 Začni přímo vysvětlením, bez úvodu jako "Samozřejmě!" nebo "Jasně!".`
 
   try {
+    console.log('Volám Claude API...')
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -39,15 +42,19 @@ Začni přímo vysvětlením, bez úvodu jako "Samozřejmě!" nebo "Jasně!".`
         messages: [{ role: 'user', content: prompt }]
       })
     })
+    console.log('Response status:', res.status)
     const data = await res.json()
+    console.log('Response data:', JSON.stringify(data).slice(0, 200))
     if (data.content?.[0]?.text) return data.content[0].text
     return getFallback(question)
-  } catch {
+  } catch (err) {
+    console.error('API chyba:', err)
     return getFallback(question)
   }
 }
 
 export async function smartPaste(rawText) {
+  const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY
   if (!API_KEY) {
     return null
   }
