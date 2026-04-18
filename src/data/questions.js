@@ -80,6 +80,6 @@ export const PROFILES = [
   { id: 'tata',   name: 'Táta',   emoji: '👨', color: '#3d9efc' },
   { id: 'mama',   name: 'Máma',   emoji: '👩', color: '#f472b6' },
   { id: 'mia',    name: 'Mia',    emoji: '👧', color: '#a78bfa' },
-  { id: 'centik', name: 'Centík', emoji: '👦', color: '#34d399' },
+  { id: 'centik', name: 'Centík', emoji: '🦖', color: '#34d399' },
   { id: 'host',   name: 'Host',   emoji: '🙂', color: '#f97316' },
 ]
