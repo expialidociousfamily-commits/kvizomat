@@ -30,7 +30,7 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
       }}>
         <div style={{ fontSize: '3rem' }}>🔒</div>
         <div className="display" style={{ fontSize: '3rem', color: 'var(--gold)' }}>SPRÁVA OTÁZEK</div>
-        <div style={{ color: 'var(--muted)' }}>Zadejte PIN (výchozí: 0000)</div>
+        <div style={{ color: 'var(--muted)' }}>Zadejte PIN</div>
         <input
           type="password"
           maxLength={4}
@@ -45,12 +45,12 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
             letterSpacing: 12
           }}
           onKeyDown={e => {
-            if (e.key === 'Enter' && pin === '0000') setUnlocked(true)
+            if (e.key === 'Enter' && pin === '8205') setUnlocked(true)
           }}
         />
         <div style={{ display: 'flex', gap: 16 }}>
           <button className="btn btn-ghost" onClick={onClose} style={{ padding: '14px 28px', fontSize: '1rem' }}>← Zpět</button>
-          <button className="btn btn-gold" onClick={() => pin === '0000' && setUnlocked(true)} style={{ padding: '14px 28px', fontSize: '1rem' }}>Potvrdit</button>
+          <button className="btn btn-gold" onClick={() => pin === '8205' && setUnlocked(true)} style={{ padding: '14px 28px', fontSize: '1rem' }}>Potvrdit</button>
         </div>
       </div>
     )
