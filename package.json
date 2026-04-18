@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"node server.js\" \"vite\"",
-    "build": "vite build",
+    "build": "vite build && mkdir -p dist/join && cp mobile.html dist/join/index.html",
     "preview": "vite preview",
     "server": "node server.js",
     "start": "node server.js"

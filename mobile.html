@@ -71,7 +71,7 @@ const PROFILES = [
   { id: 'tata',   name: 'Táta',   emoji: '👨' },
   { id: 'mama',   name: 'Máma',   emoji: '👩' },
   { id: 'mia',    name: 'Mia',    emoji: '👧' },
-  { id: 'centik', name: 'Centík', emoji: '👦' },
+  { id: 'centik', name: 'Centík', emoji: '🦖' },
   { id: 'host',   name: 'Host',   emoji: '🙂' },
 ]
 const OPTION_COLORS = { A: '#e74c3c', B: '#3498db', C: '#f39c12', D: '#27ae60' }
@@ -81,8 +81,7 @@ try { myProfile = JSON.parse(localStorage.getItem('kviz_mobile_profile')) } catc
 let gameState = { phase: 'waiting', question: null, answers: {} }
 let myAnswer = null
 
-// Připojíme se na stejný server co servíruje tuto stránku (funguje lokálně i na Railway)
-const SOCKET_URL = window.SOCKET_URL || window.location.origin
+const SOCKET_URL = 'https://kvizomat-production.up.railway.app'
 const socket = io(SOCKET_URL)
 
 socket.on('game-state', (state) => {
