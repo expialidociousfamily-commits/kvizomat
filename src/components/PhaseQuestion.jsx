@@ -8,7 +8,7 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
   const [stage, setStage] = useState('thinking') // thinking | answering | done
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS)
   const [selectedAnswers, setSelectedAnswers] = useState({})
-  const [mobileJoinUrl, setMobileJoinUrl] = useState(`${SOCKET_URL}/join`)
+  const mobileJoinUrl = window.location.origin + '/join'
   const socketRef = useRef(null)
 
   useEffect(() => {
@@ -29,10 +29,6 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
     socket.on('answer-received', ({ profileId, answer }) => {
       setSelectedAnswers(prev => ({ ...prev, [profileId]: answer }))
     })
-    fetch(`${SOCKET_URL}/ip`)
-      .then(r => r.json())
-      .then(d => setMobileJoinUrl(`${d.url}/join`))
-      .catch(() => {})
     return () => {
       socket.emit('end-question')
       socket.disconnect()

@@ -13,24 +13,13 @@ export default function HomeScreen({ streak, points, stats, profiles, onStart, o
   }
 
   const [qrDataUrl, setQrDataUrl] = useState('')
-  const [mobileUrl, setMobileUrl] = useState(
-    `${import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001'}/join`
-  )
+  const mobileUrl = window.location.origin + '/join'
 
   useEffect(() => {
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || `http://${window.location.hostname}:3001`
-    fetch(`${socketUrl}/ip`)
-      .then(r => r.json())
-      .then(d => setMobileUrl(`${d.url}/join`))
-      .catch(() => {})
-  }, [])
-
-  useEffect(() => {
-    if (!mobileUrl) return
     QRCode.toDataURL(mobileUrl, { width: 96, margin: 1, color: { dark: '#ffffff', light: '#070b14' } })
       .then(setQrDataUrl)
       .catch(() => {})
-  }, [mobileUrl])
+  }, [])
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
