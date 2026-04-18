@@ -16,6 +16,7 @@ function getLocalIP() {
 
 const app = express()
 app.use(cors({ origin: '*' }))
+app.use(express.json())
 app.use(express.static('public'))
 
 const server = createServer(app)
@@ -32,6 +33,104 @@ app.get('/join', (req, res) => {
 })
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }))
+
+async function callAnthropic(prompt, max_tokens) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`)
+  return data.content?.[0]?.text || ''
+}
+
+app.post('/api/teaching', async (req, res) => {
+  const { question } = req.body
+  if (!question) return res.status(400).json({ error: 'Chybí question' })
+  if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'Chybí ANTHROPIC_API_KEY' })
+
+  const prompt = `Jsi přátelský a trpělivý učitel pro děti ve věku 8–12 let.
+Dostal jsi tuto testovou otázku z přijímaček na gymnázium:
+
+OTÁZKA: ${question.question}
+PŘEDMĚT: ${question.subject}
+TÉMA: ${question.category}
+SPRÁVNÁ ODPOVĚĎ: ${question.answer}
+
+Tvůj úkol:
+1. Vygeneruj PODOBNÝ, o trochu jednodušší příklad a vysvětli ho krok po kroku.
+2. Použij konkrétní přirovnání ze života (jídlo, sport, hra, příroda).
+3. Na konci jednou větou vysvětli PROČ to v životě potřebujeme umět.
+4. Buď povzbudivý, hravý a zábavný.
+5. Délka: max 250 slov. Používej emoji.
+6. Formát: přehledný text s nadpisy a kroky — bude zobrazen na velké TV obrazovce.
+7. NEZOBRAZUJ správnou odpověď na hlavní otázku — jen vysvětli METODU na podobném příkladě.
+
+Začni přímo vysvětlením, bez úvodu jako "Samozřejmě!" nebo "Jasně!".`
+
+  try {
+    const text = await callAnthropic(prompt, 800)
+    res.json({ text })
+  } catch (err) {
+    console.error('/api/teaching error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/smartpaste', async (req, res) => {
+  const { text: rawText } = req.body
+  if (!rawText) return res.status(400).json({ error: 'Chybí text' })
+  if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'Chybí ANTHROPIC_API_KEY' })
+
+  const prompt = `Zparsuj tuto testovou otázku a vrať POUZE JSON (žádný markdown, žádné backticky):
+
+TEXT: ${rawText}
+
+Vrať JSON v tomto přesném formátu:
+{
+  "subject": "matematika" nebo "čeština",
+  "category": "stručný název tématu",
+  "difficulty": číslo 1-5,
+  "question": "text otázky",
+  "options": {"A": "...", "B": "...", "C": "...", "D": "..."},
+  "correct_option": "A" nebo "B" nebo "C" nebo "D",
+  "answer": "správná odpověď slovně",
+  "answer_explanation": "krátké vysvětlení proč",
+  "hints": ["hint 1", "hint 2"]
+}
+
+Pokud otázka nemá možnosti A/B/C/D, vymysli 3 věrohodné špatné odpovědi jako distraktory.
+Pokud nevíš správnou odpověď, nastav correct_option na "A" a answer_explanation na "Doplňte ručně".
+
+DŮLEŽITÉ: Odpověz POUZE čistým JSON objektem. Žádný text před ani po. Žádné markdown backticky. Jen { ... }`
+
+  try {
+    const text = await callAnthropic(prompt, 600)
+    try {
+      res.json(JSON.parse(text))
+    } catch {
+      const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+      try {
+        res.json(JSON.parse(clean))
+      } catch (e) {
+        console.error('/api/smartpaste JSON parse failed:', e.message, '\nRaw:', text.slice(0, 200))
+        res.status(500).json({ error: 'JSON parse failed' })
+      }
+    }
+  } catch (err) {
+    console.error('/api/smartpaste error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
 
 app.get('/ip', (req, res) => {
   res.json({
