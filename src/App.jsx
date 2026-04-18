@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import LoginScreen from './components/LoginScreen'
 import HomeScreen from './components/HomeScreen'
 import PhaseTeaching from './components/PhaseTeaching'
 import PhaseQuestion from './components/PhaseQuestion'
@@ -27,6 +28,7 @@ function calcStats(questions, profileId) {
 }
 
 export default function App() {
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem('kviz_auth') === 'true')
   const [phase, setPhase] = useState('home')
   const [questions, setQuestions] = useState(() => {
     const stored = loadStorage('kviz_questions', null)
@@ -148,6 +150,10 @@ export default function App() {
   // Progress indicator
   const progressMap = { home: 0, teaching: 25, question: 55, reveal: 80, summary: 100, parent: 0 }
   const progress = progressMap[phase] || 0
+
+  if (!authed) {
+    return <LoginScreen onLogin={() => { sessionStorage.setItem('kviz_auth', 'true'); setAuthed(true) }} />
+  }
 
   return (
     <div className="tv-canvas">
