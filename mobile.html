@@ -132,13 +132,15 @@ let myProfile = null
 try { myProfile = JSON.parse(localStorage.getItem('kviz_mobile_profile')) } catch {}
 let gameState = { phase: 'waiting', question: null, answers: {} }
 let myAnswer = null
-let myAnAnswers = {}      // tracks per-subitem answers for AN questions
-let myMatchAnswers = {}   // tracks per-subitem answers for match questions
+let myAnAnswers = {}
+let myMatchAnswers = {}
+let submitted = false
 
 const SOCKET_URL = 'https://kvizomat-production.up.railway.app'
 const socket = io(SOCKET_URL)
 
 function resetMobileUI() {
+  submitted = false
   myAnswer = null
   myAnAnswers = {}
   myMatchAnswers = {}
@@ -161,20 +163,15 @@ socket.on('round-ended', () => {
 socket.on('game-state', (state) => {
   const prevQId = gameState.question?.id
   gameState = state
-  if (state.question?.id !== prevQId) { myAnswer = null; myAnAnswers = {}; myMatchAnswers = {} }
+  if (state.question?.id !== prevQId) { submitted = false; myAnswer = null; myAnAnswers = {}; myMatchAnswers = {} }
   if (state.phase === 'waiting') {
     resetMobileUI()
     return
   }
-  render()
+  if (!submitted) render()
 })
 
-socket.on('answer-received', ({ profileId }) => {
-  if (myProfile && profileId === myProfile.id) {
-    myAnswer = gameState.answers[profileId]
-    render()
-  }
-})
+socket.on('answer-received', () => {})
 
 function selectProfile(profile) {
   myProfile = profile
@@ -226,37 +223,40 @@ function showConfirmation(answer) {
 }
 
 function submitMcAnswer(option) {
-  if (!myProfile || myAnswer) return
+  if (!myProfile || submitted) return
+  submitted = true
   myAnswer = option
   socket.emit('submit-answer', { profileId: myProfile.id, answer: option })
   showConfirmation(option)
 }
 
 function selectAnAnswer(subitemId, option) {
-  if (myAnswer) return
+  if (submitted) return
   myAnAnswers[subitemId] = option
   render()
 }
 
 function submitAnAnswer() {
-  if (!myProfile || myAnswer) return
+  if (!myProfile || submitted) return
   const subitems = gameState.question?.subitems || []
   if (!subitems.every(si => myAnAnswers[si.id])) return
+  submitted = true
   myAnswer = { ...myAnAnswers }
   socket.emit('submit-answer', { profileId: myProfile.id, answer: myAnswer })
   showConfirmation(myAnswer)
 }
 
 function selectMatchAnswer(subitemId, option) {
-  if (myAnswer) return
+  if (submitted) return
   myMatchAnswers[subitemId] = option
   render()
 }
 
 function submitMatchAnswer() {
-  if (!myProfile || myAnswer) return
+  if (!myProfile || submitted) return
   const subitems = gameState.question?.subitems || []
   if (!subitems.every(si => myMatchAnswers[si.id])) return
+  submitted = true
   myAnswer = { ...myMatchAnswers }
   socket.emit('submit-answer', { profileId: myProfile.id, answer: myAnswer })
   showConfirmation(myAnswer)
