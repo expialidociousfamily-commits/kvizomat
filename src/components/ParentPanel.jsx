@@ -179,9 +179,9 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
                 )}
                 <div style={{ fontSize: '1.5rem' }}>{q.emoji}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>{q.question.slice(0, 80)}...</div>
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>{(q.question || q.subitems?.[0]?.question || 'Bez názvu').slice(0, 80)}...</div>
                   <div style={{ color: 'var(--muted)', fontSize: '0.85rem', marginTop: 4 }}>
-                    {q.subject} · {q.category} · Obtížnost {q.difficulty}/5
+                    {q.subject || ''} · {q.category || ''} · Obtížnost {q.difficulty}/5
                   </div>
                   {isPlayed && q.results && (
                     <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
@@ -263,7 +263,7 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
             <div key={q.id} className="card" style={{ padding: '16px 24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <span style={{ fontSize: '1.3rem' }}>{q.emoji}</span>
-                <span style={{ fontWeight: 800, fontSize: '1rem' }}>{q.question.slice(0, 80)}...</span>
+                <span style={{ fontWeight: 800, fontSize: '1rem' }}>{(q.question || q.subitems?.[0]?.question || 'Bez názvu').slice(0, 80)}...</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {PROFILES.map(p => {
