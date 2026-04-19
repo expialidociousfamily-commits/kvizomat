@@ -6,7 +6,7 @@ import PhaseQuestion from './components/PhaseQuestion'
 import PhaseReveal from './components/PhaseReveal'
 import SessionSummary from './components/SessionSummary'
 import ParentPanel from './components/ParentPanel'
-import { questions as defaultQuestions, PROFILES } from './data/questions'
+import { questions as defaultQuestions, PROFILES, QUESTIONS_VERSION } from './data/questions'
 import { generateTeaching } from './utils/claude'
 const BACKEND = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001'
 import './App.css'
@@ -32,6 +32,11 @@ export default function App() {
   const [authed, setAuthed] = useState(() => sessionStorage.getItem('kviz_auth') === 'true')
   const [phase, setPhase] = useState('home')
   const [questions, setQuestions] = useState(() => {
+    const savedVersion = localStorage.getItem('kviz_questions_version')
+    if (savedVersion !== String(QUESTIONS_VERSION)) {
+      localStorage.removeItem('kviz_questions')
+      localStorage.setItem('kviz_questions_version', String(QUESTIONS_VERSION))
+    }
     const stored = loadStorage('kviz_questions', null)
     if (!stored || stored.length === 0) return defaultQuestions
     const storedIds = new Set(stored.map(q => q.id))

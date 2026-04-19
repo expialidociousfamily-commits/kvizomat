@@ -1,3 +1,5 @@
+export const QUESTIONS_VERSION = 2
+
 export const questions = [
   {
     "id": "ma_2024_08",
