@@ -93,6 +93,27 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
           {type === 'an' && <span style={{ marginLeft: 10, color: 'var(--blue)', fontWeight: 700 }}>ANO / NE</span>}
           {type === 'match' && <span style={{ marginLeft: 10, color: 'var(--gold)', fontWeight: 700 }}>PŘIŘAZOVÁNÍ</span>}
         </div>
+
+        {question.context && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 700, marginBottom: 6 }}>📄 Výchozí text:</div>
+            <div style={{
+              fontSize: '1rem', fontStyle: 'italic',
+              background: 'rgba(0,0,0,0.25)',
+              borderLeft: '3px solid var(--blue)',
+              borderRadius: '0 8px 8px 0',
+              padding: '10px 14px',
+              maxHeight: '30vh',
+              overflowY: 'auto',
+              whiteSpace: 'pre-line',
+              lineHeight: 1.6,
+              color: 'var(--text)'
+            }}>
+              {question.context}
+            </div>
+          </div>
+        )}
+
         <div style={{ fontSize: 'clamp(1.1rem, 2vw, 1.9rem)', fontWeight: 800, lineHeight: 1.4, whiteSpace: 'pre-line' }}>
           {question.question}
         </div>

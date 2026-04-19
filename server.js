@@ -60,7 +60,7 @@ app.post('/api/teaching', async (req, res) => {
 
   const prompt = `Jsi přátelský a trpělivý učitel pro děti ve věku 8–12 let.
 Dostal jsi tuto testovou otázku z přijímaček na gymnázium:
-
+${question.context ? `\nVÝCHOZÍ TEXT K ÚLOZE:\n${question.context}\n` : ''}
 OTÁZKA: ${question.question}
 PŘEDMĚT: ${question.subject}
 TÉMA: ${question.category}
@@ -96,6 +96,8 @@ app.post('/api/smartpaste', async (req, res) => {
 - "an" pokud se ptá zda jsou tvrzení pravdivá (Ano/Ne, A/N, pravda/nepravda)
 - "match" pokud přiřazuje možnosti k položkám
 
+Pokud text obsahuje výchozí text k úloze (např. báseň, odstavec, tabulku, graf nebo jiný text PŘED samotnou otázkou), extrahuj ho do pole "context". Jinak nastav "context" na null.
+
 TEXT: ${rawText}
 
 Pro mc vrať:
@@ -104,6 +106,7 @@ Pro mc vrať:
   "subject": "matematika" nebo "čeština",
   "category": "stručný název tématu",
   "difficulty": číslo 1-5,
+  "context": null nebo "výchozí text k úloze pokud existuje",
   "question": "text otázky",
   "options": {"A": "...", "B": "...", "C": "...", "D": "..."} (nebo A–E pokud 5 možností),
   "correct_option": "A"–"E",
@@ -118,6 +121,7 @@ Pro an vrať:
   "subject": "matematika" nebo "čeština",
   "category": "stručný název tématu",
   "difficulty": číslo 1-5,
+  "context": null nebo "výchozí text k úloze pokud existuje",
   "question": "úvodní text otázky",
   "subitems": [
     {"id": "1", "question": "text tvrzení 1", "correct_option": "A" nebo "N"},
@@ -133,6 +137,7 @@ Pro match vrať:
   "subject": "matematika" nebo "čeština",
   "category": "stručný název tématu",
   "difficulty": číslo 1-5,
+  "context": null nebo "výchozí text k úloze pokud existuje",
   "question": "text instrukce (co přiřazujeme)",
   "options": {"A": "...", "B": "...", "C": "...", "D": "..."} (pravá strana — co se přiřazuje K),
   "subitems": [

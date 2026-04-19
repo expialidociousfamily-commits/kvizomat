@@ -5,6 +5,7 @@ import { PROFILES } from '../data/questions'
 const emptyManual = {
   type: 'mc',
   subject: 'matematika', category: '', question: '',
+  context: null,
   options: { A: '', B: '', C: '', D: '' },
   correct_option: 'A', answer: '', answer_explanation: '',
   hints: [], difficulty: 2, emoji: '📝',
@@ -115,6 +116,7 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
       correct_option: q.correct_option || 'A',
       answer: q.answer || '',
       answer_explanation: q.answer_explanation || q.static_teaching_note || '',
+      context: q.context || null,
       hints: q.hints || [],
       difficulty: q.difficulty || 2,
       emoji: q.emoji || '📝',
@@ -390,6 +392,12 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
                   </div>
                 ))}
               </div>
+              {parsed.context && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>📄 Výchozí text</div>
+                  <div style={{ fontStyle: 'italic', fontSize: '0.9rem', color: 'var(--muted)', whiteSpace: 'pre-line' }}>{parsed.context}</div>
+                </div>
+              )}
               <div style={{ marginBottom: 12 }}>
                 <div style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>Otázka</div>
                 <div style={{ fontWeight: 700 }}>{parsed.question}</div>
@@ -509,6 +517,18 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
               </label>
               <textarea value={manualQ.question} onChange={e => setManualQ(q => ({ ...q, question: e.target.value }))}
                 style={{ ...inputStyle, height: 80, fontFamily: 'var(--font-body)', resize: 'none' }} />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>
+                📄 Výchozí text k úloze (nepovinné)
+              </label>
+              <textarea
+                value={manualQ.context || ''}
+                onChange={e => setManualQ(q => ({ ...q, context: e.target.value || null }))}
+                placeholder="Nepovinné — výchozí text, báseň, tabulka, graf..."
+                style={{ ...inputStyle, height: 120, fontFamily: 'var(--font-body)', resize: 'vertical' }}
+              />
             </div>
 
             {/* MC / match: options A–E */}
