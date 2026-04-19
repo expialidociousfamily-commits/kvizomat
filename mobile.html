@@ -162,11 +162,51 @@ function selectProfile(profile) {
   render()
 }
 
+function buildAnswerSummary(answer) {
+  const qType = gameState.question?.type || 'mc'
+  const subitems = gameState.question?.subitems || []
+  if (typeof answer === 'object' && answer !== null) {
+    if (qType === 'match') {
+      return `<div style="margin-top:12px;display:flex;flex-direction:column;gap:5px;align-items:flex-start;padding:0 8px">
+        ${subitems.map((si, idx) => {
+          const opt = answer[si.id]
+          return `<div style="display:flex;align-items:center;gap:8px;font-size:0.88rem">
+            <span style="color:#8899aa">${idx + 1}.</span>
+            <span style="color:#d0dae8;font-weight:600;flex:1">${si.question}</span>
+            <span style="background:${OPTION_COLORS[opt] || '#555'};color:#fff;border-radius:6px;padding:2px 10px;font-weight:900">${opt}</span>
+          </div>`
+        }).join('')}
+      </div>`
+    } else {
+      return `<div style="margin-top:12px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+        ${subitems.map((si, idx) => `
+          <div style="background:#1e2d45;border-radius:8px;padding:4px 10px;font-size:0.9rem;font-weight:800;color:${answer[si.id] === 'A' ? '#27ae60' : '#e74c3c'}">
+            ${idx + 1}. ${answer[si.id] === 'A' ? 'ANO' : 'NE'}
+          </div>
+        `).join('')}
+      </div>`
+    }
+  }
+  return `<div style="margin-top:10px;font-size:2rem;font-weight:900;color:${OPTION_COLORS[answer] || '#fff'}">${answer}</div>`
+}
+
+function showConfirmation(answer) {
+  document.getElementById('app').innerHTML = `
+    <div class="player-badge">${myProfile.emoji} ${myProfile.name}</div>
+    <div class="status-card">
+      <div class="status-icon">✅</div>
+      <div class="status-text">Odesláno!</div>
+      ${buildAnswerSummary(answer)}
+      <div class="status-sub" style="margin-top:14px">Čekáme na ostatní...</div>
+    </div>
+  `
+}
+
 function submitMcAnswer(option) {
   if (!myProfile || myAnswer) return
   myAnswer = option
   socket.emit('submit-answer', { profileId: myProfile.id, answer: option })
-  render()
+  showConfirmation(option)
 }
 
 function selectAnAnswer(subitemId, option) {
@@ -181,7 +221,7 @@ function submitAnAnswer() {
   if (!subitems.every(si => myAnAnswers[si.id])) return
   myAnswer = { ...myAnAnswers }
   socket.emit('submit-answer', { profileId: myProfile.id, answer: myAnswer })
-  render()
+  showConfirmation(myAnswer)
 }
 
 function selectMatchAnswer(subitemId, option) {
@@ -196,7 +236,7 @@ function submitMatchAnswer() {
   if (!subitems.every(si => myMatchAnswers[si.id])) return
   myAnswer = { ...myMatchAnswers }
   socket.emit('submit-answer', { profileId: myProfile.id, answer: myAnswer })
-  render()
+  showConfirmation(myAnswer)
 }
 
 function render() {
