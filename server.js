@@ -34,7 +34,7 @@ app.get('/join', (req, res) => {
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }))
 
-async function callAnthropic(prompt, max_tokens) {
+async function callAnthropic(prompt, max_tokens, model = 'claude-haiku-4-5-20251001') {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -43,13 +43,16 @@ async function callAnthropic(prompt, max_tokens) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-5',
+      model,
       max_tokens,
       messages: [{ role: 'user', content: prompt }]
     })
   })
   const data = await res.json()
-  if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`)
+  if (!res.ok) {
+    console.error('Anthropic API error:', res.status, JSON.stringify(data))
+    throw new Error(data.error?.message || `HTTP ${res.status}`)
+  }
   return data.content?.[0]?.text || ''
 }
 
@@ -78,7 +81,7 @@ Tvůj úkol:
 Začni přímo vysvětlením, bez úvodu jako "Samozřejmě!" nebo "Jasně!".`
 
   try {
-    const text = await callAnthropic(prompt, 800)
+    const text = await callAnthropic(prompt, 800, 'claude-sonnet-4-6')
     res.json({ text })
   } catch (err) {
     console.error('/api/teaching error:', err.message)
