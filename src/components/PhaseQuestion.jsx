@@ -13,6 +13,7 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
 
   const type = question.type || 'mc'
   const optionKeys = question.options ? Object.keys(question.options) : []
+  const isSubitemType = type === 'an' || type === 'match'
 
   useEffect(() => {
     if (stage !== 'thinking') return
@@ -25,7 +26,7 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
     if (stage !== 'answering') return
     const socket = connectSocket(SOCKET_URL)
     socketRef.current = socket
-    socket.emit('start-question', { id: question.id, options: question.options })
+    socket.emit('start-question', { id: question.id, type, options: question.options, subitems: question.subitems })
     socket.on('answer-received', ({ profileId, answer }) => {
       setSelectedAnswers(prev => ({ ...prev, [profileId]: answer }))
     })
@@ -41,21 +42,15 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
     setSelectedAnswers(prev => ({ ...prev, [profileId]: option }))
   }
 
-  function selectAnAnswer(profileId, subitemId, option) {
+  function selectSubitemAnswer(profileId, subitemId, option) {
     setSelectedAnswers(prev => ({
       ...prev,
       [profileId]: { ...(prev[profileId] || {}), [subitemId]: option }
     }))
   }
 
-  function profileAnsweredCount(profileId) {
-    if (type !== 'an') return null
-    const ans = selectedAnswers[profileId] || {}
-    return Object.keys(ans).length
-  }
-
   const allAnswered = profiles.every(p => {
-    if (type === 'an') {
+    if (isSubitemType) {
       const ans = selectedAnswers[p.id] || {}
       return question.subitems.every(si => ans[si.id])
     }
@@ -64,7 +59,7 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
 
   const waitingFor = profiles
     .filter(p => {
-      if (type === 'an') {
+      if (isSubitemType) {
         const ans = selectedAnswers[p.id] || {}
         return !question.subitems.every(si => ans[si.id])
       }
@@ -80,14 +75,11 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
         <div style={{ flex: 1, height: 12, background: 'var(--border)', borderRadius: 6, overflow: 'hidden' }}>
           <div style={{
             height: '100%', width: `${pct}%`,
-            background: timerColor,
-            transition: 'width 1s linear, background 0.3s',
-            borderRadius: 6
+            background: timerColor, transition: 'width 1s linear, background 0.3s', borderRadius: 6
           }} />
         </div>
         <div style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(2rem, 4vw, 3.5rem)',
+          fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4vw, 3.5rem)',
           color: timerColor, minWidth: 100, textAlign: 'right'
         }}>
           {mins}:{secs}
@@ -95,36 +87,32 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
       </div>
 
       {/* Question card */}
-      <div className="card fade-up" style={{ padding: '4% 5%', marginBottom: '2%' }}>
-        <div style={{ color: 'var(--muted)', fontSize: 'clamp(0.85rem, 1.2vw, 1rem)', marginBottom: 16 }}>
+      <div className="card fade-up" style={{ padding: '3% 4%', marginBottom: '2%' }}>
+        <div style={{ color: 'var(--muted)', fontSize: 'clamp(0.85rem, 1.2vw, 1rem)', marginBottom: 12 }}>
           {question.emoji} {question.subject.toUpperCase()} · {question.category}
           {type === 'an' && <span style={{ marginLeft: 10, color: 'var(--blue)', fontWeight: 700 }}>ANO / NE</span>}
           {type === 'match' && <span style={{ marginLeft: 10, color: 'var(--gold)', fontWeight: 700 }}>PŘIŘAZOVÁNÍ</span>}
         </div>
-        <div style={{
-          fontSize: 'clamp(1.3rem, 2.5vw, 2.2rem)',
-          fontWeight: 800, lineHeight: 1.5, whiteSpace: 'pre-line'
-        }}>
+        <div style={{ fontSize: 'clamp(1.1rem, 2vw, 1.9rem)', fontWeight: 800, lineHeight: 1.4, whiteSpace: 'pre-line' }}>
           {question.question}
         </div>
 
-        {/* AN: subitems list in question card */}
-        {type === 'an' && question.subitems && (
-          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Subitems list for AN and match */}
+        {isSubitemType && question.subitems && (
+          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
             {question.subitems.map((si, idx) => (
               <div key={si.id} style={{
-                display: 'flex', gap: 12, alignItems: 'flex-start',
-                padding: '12px 16px', borderRadius: 12,
+                display: 'flex', gap: 10, alignItems: 'flex-start',
+                padding: '8px 12px', borderRadius: 10,
                 background: 'rgba(255,255,255,0.03)',
                 border: '1.5px solid var(--border)',
-                fontSize: 'clamp(1rem, 1.5vw, 1.3rem)', fontWeight: 600
+                fontSize: 'clamp(0.85rem, 1.2vw, 1.1rem)', fontWeight: 600
               }}>
                 <div style={{
                   background: 'var(--border)', color: 'var(--text)',
                   fontFamily: 'var(--font-display)',
-                  width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '1.1rem'
+                  width: 30, height: 30, borderRadius: 7, flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.95rem'
                 }}>{idx + 1}</div>
                 {si.question}
               </div>
@@ -138,8 +126,7 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
         <div className="card fade-up" style={{
           flex: 1, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', gap: 24,
-          borderColor: 'var(--blue) 44', padding: '4%',
-          animationDelay: '0.2s'
+          padding: '4%', animationDelay: '0.2s'
         }}>
           <div style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}>✏️</div>
           <div style={{ fontSize: 'clamp(1.3rem, 2.2vw, 2rem)', fontWeight: 800, textAlign: 'center' }}>
@@ -160,20 +147,31 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
       {stage === 'answering' && (
         <div className="fade-up" style={{ flex: 1, display: 'flex', gap: '2%', minHeight: 0 }}>
 
-          {/* Left: options panel (MC / match only) */}
+          {/* Left: options legend (MC + match) */}
           {(type === 'mc' || type === 'match') && (
-            <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ flex: type === 'match' ? 0.9 : 1.2, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {type === 'match' && (
+                <div style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 700, paddingLeft: 4 }}>
+                  Možnosti k přiřazení:
+                </div>
+              )}
               {Object.entries(question.options).map(([key, value]) => (
                 <div key={key} style={{
-                  display: 'flex', gap: 12, padding: '16px 20px', borderRadius: 14,
-                  border: '2px solid var(--border)', background: 'rgba(255,255,255,0.02)',
-                  fontSize: 'clamp(1.1rem, 1.6vw, 1.4rem)', fontWeight: 700, alignItems: 'center'
+                  display: 'flex', gap: 10,
+                  padding: type === 'match' ? '10px 14px' : '14px 18px',
+                  borderRadius: 12, border: '2px solid var(--border)',
+                  background: 'rgba(255,255,255,0.02)',
+                  fontSize: type === 'match' ? 'clamp(0.85rem, 1.2vw, 1.1rem)' : 'clamp(1.1rem, 1.6vw, 1.4rem)',
+                  fontWeight: 700, alignItems: 'center'
                 }}>
                   <div style={{
                     background: 'var(--border)', color: 'var(--text)',
-                    fontFamily: 'var(--font-display)', fontSize: '1.4rem',
-                    width: 44, height: 44, borderRadius: 10, flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    fontFamily: 'var(--font-display)',
+                    width: type === 'match' ? 32 : 44,
+                    height: type === 'match' ? 32 : 44,
+                    borderRadius: 8, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: type === 'match' ? '1rem' : '1.4rem'
                   }}>{key}</div>
                   {value}
                 </div>
@@ -184,49 +182,47 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
           {/* Right: profile selectors */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
 
-            {/* AN: 2-column grid, scrollable */}
-            {type === 'an' && (
+            {/* AN + match: 2-column grid of profile cards */}
+            {isSubitemType && (
               <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 10,
-                overflowY: 'auto',
-                flex: 1,
-                alignContent: 'start'
+                display: 'grid', gridTemplateColumns: '1fr 1fr',
+                gap: 10, overflowY: 'auto', flex: 1, alignContent: 'start'
               }}>
                 {profiles.map(p => {
                   const ans = selectedAnswers[p.id] || {}
                   const count = Object.keys(ans).length
                   const total = question.subitems.length
+                  const buttons = type === 'an' ? ['A', 'N'] : optionKeys
                   return (
                     <div key={p.id} className="card" style={{ padding: '10px 12px', borderColor: p.color + '33' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                         <span style={{ fontSize: '1.2rem' }}>{p.emoji}</span>
                         <span style={{ fontWeight: 800, fontSize: '0.95rem', color: p.color }}>{p.name}</span>
                         <span style={{
-                          marginLeft: 'auto', fontSize: '0.72rem', color: count === total ? 'var(--green)' : 'var(--muted)',
-                          fontWeight: 700
-                        }}>
-                          {count}/{total}
-                        </span>
+                          marginLeft: 'auto', fontSize: '0.72rem',
+                          color: count === total ? 'var(--green)' : 'var(--muted)', fontWeight: 700
+                        }}>{count}/{total}</span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                         {question.subitems.map((si, idx) => {
                           const chosen = ans[si.id]
                           return (
                             <div key={si.id} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                              <span style={{ color: 'var(--muted)', fontSize: '0.78rem', minWidth: 18, textAlign: 'right', flexShrink: 0 }}>
-                                {idx + 1}.
-                              </span>
-                              {['A', 'N'].map(opt => (
-                                <button key={opt} onClick={() => selectAnAnswer(p.id, si.id, opt)} style={{
-                                  flex: 1, height: 36, borderRadius: 6,
+                              <span style={{
+                                color: 'var(--muted)', fontSize: '0.78rem',
+                                minWidth: 18, textAlign: 'right', flexShrink: 0
+                              }}>{idx + 1}.</span>
+                              {buttons.map(opt => (
+                                <button key={opt} onClick={() => selectSubitemAnswer(p.id, si.id, opt)} style={{
+                                  flex: 1, height: 32, borderRadius: 5,
                                   border: '2px solid ' + (chosen === opt ? p.color : 'var(--border)'),
                                   background: chosen === opt ? p.color + '22' : 'transparent',
                                   color: chosen === opt ? p.color : 'var(--muted)',
-                                  fontSize: '0.9rem', cursor: 'pointer', fontWeight: 800,
-                                  transition: 'all 0.15s'
-                                }}>{opt === 'A' ? 'ANO' : 'NE'}</button>
+                                  fontSize: type === 'an' ? '0.75rem' : '0.82rem',
+                                  cursor: 'pointer', fontWeight: 800, transition: 'all 0.15s'
+                                }}>
+                                  {type === 'an' ? (opt === 'A' ? 'ANO' : 'NE') : opt}
+                                </button>
                               ))}
                             </div>
                           )
@@ -238,8 +234,8 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
               </div>
             )}
 
-            {/* MC / match: vertical list */}
-            {(type === 'mc' || type === 'match') && profiles.map(p => (
+            {/* MC: vertical list */}
+            {type === 'mc' && profiles.map(p => (
               <div key={p.id} className="card" style={{ padding: '12px 16px', borderColor: p.color + '33' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                   <span style={{ fontSize: '1.4rem' }}>{p.emoji}</span>
@@ -261,10 +257,9 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
             ))}
 
             <div style={{
-              padding: '8px 14px', borderRadius: 10,
+              padding: '8px 14px', borderRadius: 10, flexShrink: 0,
               background: 'rgba(255,255,255,0.04)',
-              color: 'var(--muted)', fontSize: '0.82rem', textAlign: 'center',
-              flexShrink: 0
+              color: 'var(--muted)', fontSize: '0.82rem', textAlign: 'center'
             }}>
               📱 Mobily: <strong style={{ color: 'var(--text)' }}>{mobileJoinUrl}</strong>
             </div>

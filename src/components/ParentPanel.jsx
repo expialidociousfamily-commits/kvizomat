@@ -199,7 +199,9 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
                     background: 'rgba(34,197,94,0.15)',
                     color: 'var(--green)', fontSize: '0.85rem', fontWeight: 700
                   }}>
-                    Odpověď: {q.correct_option}
+                    {q.type === 'an' || q.type === 'match'
+                      ? `${q.subitems?.length ?? '?'} podúloh`
+                      : `Odpověď: ${q.correct_option}`}
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     {isPlayed && (
@@ -393,8 +395,8 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
                 <div style={{ fontWeight: 700 }}>{parsed.question}</div>
               </div>
 
-              {/* MC / match: options preview */}
-              {(parsed.type === 'mc' || parsed.type === 'match' || !parsed.type) && parsed.options && (
+              {/* MC: options preview */}
+              {(parsed.type === 'mc' || !parsed.type) && parsed.options && (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
                   {Object.entries(parsed.options).map(([k, v]) => (
                     <div key={k} style={{
@@ -406,6 +408,39 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
                       <strong>{k}:</strong> {v}
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* match: options + subitems preview */}
+              {parsed.type === 'match' && (
+                <div style={{ marginBottom: 16 }}>
+                  {parsed.options && (
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ color: 'var(--muted)', fontSize: '0.82rem', marginBottom: 6 }}>Možnosti k přiřazení:</div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {Object.entries(parsed.options).map(([k, v]) => (
+                          <div key={k} style={{ padding: '4px 10px', borderRadius: 7, background: 'var(--bg)', border: '1px solid var(--border)', fontSize: '0.85rem' }}>
+                            <strong>{k}:</strong> {v}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {parsed.subitems && (
+                    <div>
+                      <div style={{ color: 'var(--muted)', fontSize: '0.82rem', marginBottom: 6 }}>Přiřazení:</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                        {parsed.subitems.map((si, idx) => (
+                          <div key={si.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 7, background: 'var(--bg)', border: '1px solid var(--border)' }}>
+                            <span style={{ color: 'var(--muted)', minWidth: 18, fontSize: '0.82rem' }}>{idx + 1}.</span>
+                            <span style={{ flex: 1, fontSize: '0.88rem' }}>{si.question}</span>
+                            <span style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>→</span>
+                            <span style={{ fontWeight: 800, color: 'var(--green)', fontSize: '0.9rem' }}>{si.correct_option}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -479,6 +514,9 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
             {/* MC / match: options A–E */}
             {(manualQ.type === 'mc' || manualQ.type === 'match') && (
               <>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--muted)', marginBottom: 8 }}>
+                  {manualQ.type === 'match' ? 'Možnosti k přiřazení (pravá strana):' : 'Možnosti odpovědí:'}
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                   {['A','B','C','D','E'].map(k => (
                     <div key={k}>
@@ -488,20 +526,75 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
                     </div>
                   ))}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: 16, marginBottom: 16 }}>
-                  <div>
-                    <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Správná</label>
-                    <select value={manualQ.correct_option} onChange={e => setManualQ(q => ({ ...q, correct_option: e.target.value, answer: q.options[e.target.value] || '' }))}
-                      style={inputStyle}>
-                      {['A','B','C','D','E'].filter(k => manualQ.options[k]).map(k => <option key={k}>{k}</option>)}
-                    </select>
+
+                {/* MC only: single correct answer dropdown */}
+                {manualQ.type === 'mc' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: 16, marginBottom: 16 }}>
+                    <div>
+                      <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Správná</label>
+                      <select value={manualQ.correct_option} onChange={e => setManualQ(q => ({ ...q, correct_option: e.target.value, answer: q.options[e.target.value] || '' }))}
+                        style={inputStyle}>
+                        {['A','B','C','D','E'].filter(k => manualQ.options[k]).map(k => <option key={k}>{k}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Vysvětlení</label>
+                      <input value={manualQ.answer_explanation} onChange={e => setManualQ(q => ({ ...q, answer_explanation: e.target.value }))}
+                        placeholder="Krátké vysvětlení proč je tato odpověď správná..."
+                        style={inputStyle} />
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Vysvětlení</label>
-                    <input value={manualQ.answer_explanation} onChange={e => setManualQ(q => ({ ...q, answer_explanation: e.target.value }))}
-                      placeholder="Krátké vysvětlení proč je tato odpověď správná..."
-                      style={inputStyle} />
-                  </div>
+                )}
+              </>
+            )}
+
+            {/* match: subitems (co přiřazujeme) */}
+            {manualQ.type === 'match' && (
+              <>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--muted)', margin: '4px 0 10px' }}>
+                  Co přiřazujeme (levá strana):
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+                  {manualQ.subitems.map((si, idx) => (
+                    <div key={si.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: 'var(--muted)', minWidth: 22, fontSize: '0.9rem', fontWeight: 700 }}>{idx + 1}.</span>
+                      <input
+                        value={si.question}
+                        onChange={e => setManualQ(q => ({
+                          ...q,
+                          subitems: q.subitems.map(s => s.id === si.id ? { ...s, question: e.target.value } : s)
+                        }))}
+                        placeholder="Položka k přiřazení..."
+                        style={{ ...inputStyle, flex: 1, padding: '8px 12px', fontSize: '0.95rem' }}
+                      />
+                      <select
+                        value={si.correct_option || 'A'}
+                        onChange={e => setManualQ(q => ({
+                          ...q,
+                          subitems: q.subitems.map(s => s.id === si.id ? { ...s, correct_option: e.target.value } : s)
+                        }))}
+                        style={{ ...inputStyle, width: 70, padding: '8px 6px', fontSize: '0.95rem' }}
+                      >
+                        {['A','B','C','D','E'].filter(k => manualQ.options[k]).map(k => <option key={k}>{k}</option>)}
+                      </select>
+                      <button onClick={() => setManualQ(q => ({ ...q, subitems: q.subitems.filter(s => s.id !== si.id) }))}
+                        style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: '#f87171', cursor: 'pointer', fontSize: '0.9rem' }}>
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button className="btn btn-ghost" onClick={() => setManualQ(q => ({
+                  ...q,
+                  subitems: [...q.subitems, { id: String(q.subitems.length + 1), question: '', correct_option: 'A' }]
+                }))} style={{ padding: '8px 18px', fontSize: '0.9rem', marginBottom: 14 }}>
+                  + Přidat položku
+                </button>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Vysvětlení</label>
+                  <input value={manualQ.answer_explanation} onChange={e => setManualQ(q => ({ ...q, answer_explanation: e.target.value }))}
+                    placeholder="Souhrnné vysvětlení přiřazení..."
+                    style={inputStyle} />
                 </div>
               </>
             )}
@@ -560,8 +653,17 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
               </>
             )}
 
-            <button className="btn btn-gold" onClick={() => saveQuestion(manualQ)}
-              disabled={!manualQ.question || (manualQ.type !== 'an' && !manualQ.options.A)}
+            <button className="btn btn-gold" onClick={() => {
+              if (manualQ.type === 'match') {
+                saveQuestion({
+                  ...manualQ,
+                  correct_option: Object.fromEntries(manualQ.subitems.map(si => [si.id, si.correct_option]))
+                })
+              } else {
+                saveQuestion(manualQ)
+              }
+            }}
+              disabled={!manualQ.question || (manualQ.type === 'mc' && !manualQ.options.A)}
               style={{ padding: '14px 32px', fontSize: '1rem', opacity: manualQ.question ? 1 : 0.4 }}>
               💾 Uložit otázku
             </button>

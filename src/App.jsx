@@ -97,7 +97,7 @@ export default function App() {
 
     PROFILES.forEach(p => {
       let correct
-      if (type === 'an') {
+      if (type === 'an' || type === 'match') {
         const ans = answers?.[p.id] || {}
         correct = currentQuestion.subitems.every(si => ans[si.id] === si.correct_option)
       } else {

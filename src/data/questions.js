@@ -87,7 +87,7 @@ export const questions = [
     difficulty: 2,
     emoji: "✅",
     question: "Rozhodněte, zda jsou věty napsány pravopisně správně:",
-    correct_option: ["A", "A", "A", "N", "A"],
+    correct_option: null,
     answer_explanation: "Věty 1–3 a 5 jsou pravopisně správné. Věta 4 obsahuje chybu: správně má být 'příliš' (nikoli 'přiliš').",
     hints: ["Soustřeďte se na vyjmenovaná slova a délku samohlásek", "Zkontrolujte předpony a přípony"],
     static_teaching_note: "U ano/ne otázek hodnoťte každou větu samostatně.",
@@ -107,7 +107,7 @@ export const questions = [
     difficulty: 2,
     emoji: "📐",
     question: "Přiřaďte ke každému geometrickému tvaru správný vzorec pro výpočet obsahu:",
-    correct_option: ["B", "D", "A", "C"],
+    correct_option: { "1": "B", "2": "D", "3": "A", "4": "C" },
     options: {
       A: "S = a × v / 2",
       B: "S = a²",

@@ -127,6 +127,23 @@ Pro an vrať:
   "hints": ["hint 1", "hint 2"]
 }
 
+Pro match vrať:
+{
+  "type": "match",
+  "subject": "matematika" nebo "čeština",
+  "category": "stručný název tématu",
+  "difficulty": číslo 1-5,
+  "question": "text instrukce (co přiřazujeme)",
+  "options": {"A": "...", "B": "...", "C": "...", "D": "..."} (pravá strana — co se přiřazuje K),
+  "subitems": [
+    {"id": "1", "question": "položka 1 (levá strana)", "correct_option": "B"},
+    {"id": "2", "question": "položka 2", "correct_option": "A"}
+  ],
+  "correct_option": {"1": "B", "2": "A"},
+  "answer_explanation": "krátké vysvětlení",
+  "hints": ["hint 1"]
+}
+
 Pokud mc otázka nemá možnosti A/B/C/D, vymysli 3 věrohodné špatné odpovědi jako distraktory.
 Pokud nevíš správnou odpověď, nastav correct_option na "A" a answer_explanation na "Doplňte ručně".
 
