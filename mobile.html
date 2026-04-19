@@ -15,7 +15,7 @@
     #app {
       height: 100dvh; display: flex; flex-direction: column;
       align-items: center; justify-content: center; padding: 20px;
-      gap: 16px;
+      gap: 14px; overflow-y: auto;
     }
     .title { font-size: 1.4rem; font-weight: 900; color: #f5c518; letter-spacing: 1px; }
     .subtitle { font-size: 1rem; color: #8899aa; text-align: center; }
@@ -32,6 +32,8 @@
     }
     .profile-btn:active { transform: scale(0.95); }
     .profile-btn .emoji { font-size: 2rem; }
+
+    /* MC answer buttons */
     .answer-grid {
       display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 400px;
     }
@@ -44,6 +46,41 @@
     }
     .answer-btn:active { transform: scale(0.95); }
     .answer-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* AN answer layout */
+    .an-wrapper {
+      width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .an-list {
+      display: flex; flex-direction: column; gap: 8px;
+      overflow-y: auto; max-height: 52vh;
+    }
+    .an-item {
+      background: #111827; border: 1.5px solid #1e2d45; border-radius: 14px;
+      padding: 12px 14px;
+    }
+    .an-question { font-size: 0.92rem; font-weight: 700; margin-bottom: 8px; color: #d0dae8; line-height: 1.4; }
+    .an-btns { display: flex; gap: 8px; }
+    .an-btn {
+      flex: 1; height: 44px; border-radius: 10px; border: 2px solid #1e2d45;
+      background: transparent; color: #8899aa; font-family: 'Nunito', sans-serif;
+      font-size: 1rem; font-weight: 900; cursor: pointer; transition: all 0.15s;
+    }
+    .an-btn:active { transform: scale(0.95); }
+    .an-btn.sel-yes { border-color: #27ae60; background: rgba(39,174,96,0.2); color: #27ae60; }
+    .an-btn.sel-no  { border-color: #e74c3c; background: rgba(231,76,60,0.2);  color: #e74c3c; }
+    .progress-badge {
+      font-size: 1rem; color: #f5c518; font-weight: 800; text-align: center;
+    }
+    .submit-btn {
+      width: 100%; background: #f5c518; color: #000;
+      border: none; border-radius: 14px; padding: 16px;
+      font-family: 'Nunito', sans-serif; font-size: 1.15rem; font-weight: 900;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .submit-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* Status / waiting card */
     .status-card {
       background: #111827; border: 2px solid #1e2d45; border-radius: 20px;
       padding: 32px 24px; text-align: center; width: 100%; max-width: 400px;
@@ -74,12 +111,13 @@ const PROFILES = [
   { id: 'centik', name: 'Centík', emoji: '🦖' },
   { id: 'host',   name: 'Host',   emoji: '🙂' },
 ]
-const OPTION_COLORS = { A: '#e74c3c', B: '#3498db', C: '#f39c12', D: '#27ae60' }
+const OPTION_COLORS = { A: '#e74c3c', B: '#3498db', C: '#f39c12', D: '#27ae60', E: '#9b59b6' }
 
 let myProfile = null
 try { myProfile = JSON.parse(localStorage.getItem('kviz_mobile_profile')) } catch {}
 let gameState = { phase: 'waiting', question: null, answers: {} }
 let myAnswer = null
+let myAnAnswers = {}   // tracks per-subitem answers for AN questions
 
 const SOCKET_URL = 'https://kvizomat-production.up.railway.app'
 const socket = io(SOCKET_URL)
@@ -87,8 +125,8 @@ const socket = io(SOCKET_URL)
 socket.on('game-state', (state) => {
   const prevQId = gameState.question?.id
   gameState = state
-  if (state.question?.id !== prevQId) myAnswer = null
-  if (state.phase === 'waiting') myAnswer = null
+  if (state.question?.id !== prevQId) { myAnswer = null; myAnAnswers = {} }
+  if (state.phase === 'waiting') { myAnswer = null; myAnAnswers = {} }
   render()
 })
 
@@ -103,13 +141,29 @@ function selectProfile(profile) {
   myProfile = profile
   localStorage.setItem('kviz_mobile_profile', JSON.stringify(profile))
   myAnswer = null
+  myAnAnswers = {}
   render()
 }
 
-function submitAnswer(option) {
+function submitMcAnswer(option) {
   if (!myProfile || myAnswer) return
   myAnswer = option
   socket.emit('submit-answer', { profileId: myProfile.id, answer: option })
+  render()
+}
+
+function selectAnAnswer(subitemId, option) {
+  if (myAnswer) return
+  myAnAnswers[subitemId] = option
+  render()
+}
+
+function submitAnAnswer() {
+  if (!myProfile || myAnswer) return
+  const subitems = gameState.question?.subitems || []
+  if (!subitems.every(si => myAnAnswers[si.id])) return
+  myAnswer = { ...myAnAnswers }
+  socket.emit('submit-answer', { profileId: myProfile.id, answer: myAnswer })
   render()
 }
 
@@ -133,31 +187,82 @@ function render() {
   }
 
   const alreadyInAnswers = gameState.answers?.[myProfile.id]
-  const effectiveAnswer = myAnswer || alreadyInAnswers || null
+  const effectiveAnswer = myAnswer !== null ? myAnswer : (alreadyInAnswers || null)
+  const qType = gameState.question?.type || 'mc'
 
   let content = ''
 
   if (gameState.phase === 'question' && gameState.question && !effectiveAnswer) {
-    const opts = gameState.question.options || {}
-    content = `
-      <div class="player-badge">${myProfile.emoji} ${myProfile.name}</div>
-      <div class="subtitle" style="font-size:1rem;color:#f5c518;font-weight:700">Vyber odpověď!</div>
-      <div class="answer-grid">
-        ${Object.entries(opts).map(([key, val]) => `
-          <button class="answer-btn" style="background:${OPTION_COLORS[key]}" onclick="submitAnswer('${key}')">
-            <span style="font-size:1.8rem;margin-right:6px">${key}</span>
-            <span style="font-size:1rem;font-weight:700">${val}</span>
+
+    if (qType === 'an') {
+      // AN question
+      const subitems = gameState.question.subitems || []
+      const totalCount = subitems.length
+      const answeredCount = subitems.filter(si => myAnAnswers[si.id]).length
+      const allDone = answeredCount === totalCount
+
+      content = `
+        <div class="player-badge">${myProfile.emoji} ${myProfile.name}</div>
+        <div class="an-wrapper">
+          <div class="progress-badge">Zodpovězeno: ${answeredCount} / ${totalCount}</div>
+          <div class="an-list">
+            ${subitems.map((si, idx) => {
+              const chosen = myAnAnswers[si.id]
+              return `
+                <div class="an-item">
+                  <div class="an-question">${idx + 1}. ${si.question}</div>
+                  <div class="an-btns">
+                    <button class="an-btn ${chosen === 'A' ? 'sel-yes' : ''}" onclick="selectAnAnswer('${si.id}', 'A')">✅ ANO</button>
+                    <button class="an-btn ${chosen === 'N' ? 'sel-no'  : ''}" onclick="selectAnAnswer('${si.id}', 'N')">❌ NE</button>
+                  </div>
+                </div>
+              `
+            }).join('')}
+          </div>
+          <button class="submit-btn" onclick="submitAnAnswer()" ${!allDone ? 'disabled' : ''}>
+            ${allDone ? '✅ Odeslat odpovědi' : '⏳ Zodpovězte všechna tvrzení'}
           </button>
-        `).join('')}
-      </div>
-    `
+        </div>
+      `
+    } else {
+      // MC / match question
+      const opts = gameState.question.options || {}
+      content = `
+        <div class="player-badge">${myProfile.emoji} ${myProfile.name}</div>
+        <div class="subtitle" style="font-size:1rem;color:#f5c518;font-weight:700">Vyber odpověď!</div>
+        <div class="answer-grid">
+          ${Object.entries(opts).map(([key, val]) => `
+            <button class="answer-btn" style="background:${OPTION_COLORS[key] || '#555'}" onclick="submitMcAnswer('${key}')">
+              <span style="font-size:1.8rem;margin-right:6px">${key}</span>
+              <span style="font-size:1rem;font-weight:700">${val}</span>
+            </button>
+          `).join('')}
+        </div>
+      `
+    }
+
   } else if (effectiveAnswer) {
+    // Already answered — show confirmation
+    const isAnAnswer = typeof effectiveAnswer === 'object' && effectiveAnswer !== null
+    let answerDisplay = ''
+    if (isAnAnswer && gameState.question?.subitems) {
+      answerDisplay = `<div style="margin-top:12px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+        ${gameState.question.subitems.map((si, idx) => `
+          <div style="background:#1e2d45;border-radius:8px;padding:4px 10px;font-size:0.9rem;font-weight:800;color:${effectiveAnswer[si.id] === 'A' ? '#27ae60' : '#e74c3c'}">
+            ${idx + 1}. ${effectiveAnswer[si.id] === 'A' ? 'ANO' : 'NE'}
+          </div>
+        `).join('')}
+      </div>`
+    } else {
+      answerDisplay = `<div style="margin-top:10px;font-size:2rem;font-weight:900;color:${OPTION_COLORS[effectiveAnswer] || '#fff'}">${effectiveAnswer}</div>`
+    }
     content = `
       <div class="player-badge">${myProfile.emoji} ${myProfile.name}</div>
       <div class="status-card">
         <div class="status-icon">✅</div>
-        <div class="status-text">Tvá odpověď: <span style="color:${OPTION_COLORS[effectiveAnswer]}">${effectiveAnswer}</span></div>
-        <div class="status-sub">Čekáme na ostatní...</div>
+        <div class="status-text">Odesláno!</div>
+        ${answerDisplay}
+        <div class="status-sub" style="margin-top:14px">Čekáme na ostatní...</div>
       </div>
     `
   } else {

@@ -158,7 +158,7 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
 
       {/* Answering phase */}
       {stage === 'answering' && (
-        <div className="fade-up" style={{ flex: 1, display: 'flex', gap: '2%' }}>
+        <div className="fade-up" style={{ flex: 1, display: 'flex', gap: '2%', minHeight: 0 }}>
 
           {/* Left: options panel (MC / match only) */}
           {(type === 'mc' || type === 'match') && (
@@ -182,78 +182,89 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
           )}
 
           {/* Right: profile selectors */}
-          <div style={{ flex: type === 'an' ? 2 : 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {profiles.map(p => (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
+
+            {/* AN: 2-column grid, scrollable */}
+            {type === 'an' && (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 10,
+                overflowY: 'auto',
+                flex: 1,
+                alignContent: 'start'
+              }}>
+                {profiles.map(p => {
+                  const ans = selectedAnswers[p.id] || {}
+                  const count = Object.keys(ans).length
+                  const total = question.subitems.length
+                  return (
+                    <div key={p.id} className="card" style={{ padding: '10px 12px', borderColor: p.color + '33' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                        <span style={{ fontSize: '1.2rem' }}>{p.emoji}</span>
+                        <span style={{ fontWeight: 800, fontSize: '0.95rem', color: p.color }}>{p.name}</span>
+                        <span style={{
+                          marginLeft: 'auto', fontSize: '0.72rem', color: count === total ? 'var(--green)' : 'var(--muted)',
+                          fontWeight: 700
+                        }}>
+                          {count}/{total}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {question.subitems.map((si, idx) => {
+                          const chosen = ans[si.id]
+                          return (
+                            <div key={si.id} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                              <span style={{ color: 'var(--muted)', fontSize: '0.78rem', minWidth: 18, textAlign: 'right', flexShrink: 0 }}>
+                                {idx + 1}.
+                              </span>
+                              {['A', 'N'].map(opt => (
+                                <button key={opt} onClick={() => selectAnAnswer(p.id, si.id, opt)} style={{
+                                  flex: 1, height: 36, borderRadius: 6,
+                                  border: '2px solid ' + (chosen === opt ? p.color : 'var(--border)'),
+                                  background: chosen === opt ? p.color + '22' : 'transparent',
+                                  color: chosen === opt ? p.color : 'var(--muted)',
+                                  fontSize: '0.9rem', cursor: 'pointer', fontWeight: 800,
+                                  transition: 'all 0.15s'
+                                }}>{opt === 'A' ? 'ANO' : 'NE'}</button>
+                              ))}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* MC / match: vertical list */}
+            {(type === 'mc' || type === 'match') && profiles.map(p => (
               <div key={p.id} className="card" style={{ padding: '12px 16px', borderColor: p.color + '33' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                   <span style={{ fontSize: '1.4rem' }}>{p.emoji}</span>
                   <span style={{ fontWeight: 800, fontSize: '1.1rem', color: p.color }}>{p.name}</span>
-                  {type === 'an' && (
-                    <span style={{
-                      marginLeft: 'auto', fontSize: '0.82rem', color: 'var(--muted)',
-                      background: 'rgba(255,255,255,0.06)', borderRadius: 6, padding: '2px 8px'
-                    }}>
-                      {profileAnsweredCount(p.id)}/{question.subitems.length} zodpovězeno
-                    </span>
-                  )}
                 </div>
-
-                {/* MC / match: dynamic option buttons */}
-                {(type === 'mc' || type === 'match') && (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {optionKeys.map(opt => (
-                      <button key={opt} onClick={() => selectMcAnswer(p.id, opt)} style={{
-                        flex: 1, padding: '10px 4px', borderRadius: 10,
-                        border: '2px solid ' + (selectedAnswers[p.id] === opt ? p.color : 'var(--border)'),
-                        background: selectedAnswers[p.id] === opt ? p.color + '22' : 'transparent',
-                        color: selectedAnswers[p.id] === opt ? p.color : 'var(--muted)',
-                        fontFamily: 'var(--font-display)', fontSize: '1.3rem',
-                        cursor: 'pointer', transition: 'all 0.15s', fontWeight: 700
-                      }}>{opt}</button>
-                    ))}
-                  </div>
-                )}
-
-                {/* AN: per-subitem A/N buttons */}
-                {type === 'an' && question.subitems && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {question.subitems.map((si, idx) => {
-                      const profileAns = selectedAnswers[p.id] || {}
-                      const chosen = profileAns[si.id]
-                      return (
-                        <div key={si.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{
-                            color: 'var(--muted)', fontSize: '0.85rem',
-                            fontWeight: 700, minWidth: 18, textAlign: 'right'
-                          }}>{idx + 1}.</span>
-                          <button onClick={() => selectAnAnswer(p.id, si.id, 'A')} style={{
-                            flex: 1, padding: '7px 4px', borderRadius: 8,
-                            border: '2px solid ' + (chosen === 'A' ? p.color : 'var(--border)'),
-                            background: chosen === 'A' ? p.color + '22' : 'transparent',
-                            color: chosen === 'A' ? p.color : 'var(--muted)',
-                            fontFamily: 'var(--font-display)', fontSize: '1rem',
-                            cursor: 'pointer', transition: 'all 0.15s', fontWeight: 700
-                          }}>A ano</button>
-                          <button onClick={() => selectAnAnswer(p.id, si.id, 'N')} style={{
-                            flex: 1, padding: '7px 4px', borderRadius: 8,
-                            border: '2px solid ' + (chosen === 'N' ? p.color : 'var(--border)'),
-                            background: chosen === 'N' ? p.color + '22' : 'transparent',
-                            color: chosen === 'N' ? p.color : 'var(--muted)',
-                            fontFamily: 'var(--font-display)', fontSize: '1rem',
-                            cursor: 'pointer', transition: 'all 0.15s', fontWeight: 700
-                          }}>N ne</button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {optionKeys.map(opt => (
+                    <button key={opt} onClick={() => selectMcAnswer(p.id, opt)} style={{
+                      flex: 1, padding: '10px 4px', borderRadius: 10,
+                      border: '2px solid ' + (selectedAnswers[p.id] === opt ? p.color : 'var(--border)'),
+                      background: selectedAnswers[p.id] === opt ? p.color + '22' : 'transparent',
+                      color: selectedAnswers[p.id] === opt ? p.color : 'var(--muted)',
+                      fontFamily: 'var(--font-display)', fontSize: '1.3rem',
+                      cursor: 'pointer', transition: 'all 0.15s', fontWeight: 700
+                    }}>{opt}</button>
+                  ))}
+                </div>
               </div>
             ))}
 
             <div style={{
               padding: '8px 14px', borderRadius: 10,
               background: 'rgba(255,255,255,0.04)',
-              color: 'var(--muted)', fontSize: '0.82rem', textAlign: 'center'
+              color: 'var(--muted)', fontSize: '0.82rem', textAlign: 'center',
+              flexShrink: 0
             }}>
               📱 Mobily: <strong style={{ color: 'var(--text)' }}>{mobileJoinUrl}</strong>
             </div>
@@ -263,7 +274,7 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
               onClick={() => onSubmitAnswers(selectedAnswers)}
               disabled={!allAnswered}
               style={{
-                marginTop: 8, fontSize: 'clamp(1rem, 1.6vw, 1.4rem)', padding: '18px',
+                flexShrink: 0, fontSize: 'clamp(1rem, 1.6vw, 1.4rem)', padding: '18px',
                 opacity: allAnswered ? 1 : 0.4,
                 cursor: allAnswered ? 'pointer' : 'not-allowed'
               }}
