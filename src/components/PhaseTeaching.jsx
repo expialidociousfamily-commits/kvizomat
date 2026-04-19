@@ -35,7 +35,7 @@ export default function PhaseTeaching({ question, explanation, loading, onContin
             NEJDŘÍV SE NAUČÍME
           </div>
           <div style={{ color: 'var(--muted)', fontSize: 'clamp(0.9rem, 1.5vw, 1.2rem)' }}>
-            {question.emoji} {question.subject} · {question.category}
+            {question.emoji} {question.subject || ''} · {question.category || ''}
           </div>
         </div>
       </div>

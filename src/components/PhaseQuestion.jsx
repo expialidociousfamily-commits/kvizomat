@@ -89,7 +89,7 @@ export default function PhaseQuestion({ question, profiles, onSubmitAnswers }) {
       {/* Question card */}
       <div className="card fade-up" style={{ padding: '3% 4%', marginBottom: '2%' }}>
         <div style={{ color: 'var(--muted)', fontSize: 'clamp(0.85rem, 1.2vw, 1rem)', marginBottom: 12 }}>
-          {question.emoji} {question.subject.toUpperCase()} · {question.category}
+          {question.emoji} {(question.subject || '').toUpperCase()} · {question.category || ''}
           {type === 'an' && <span style={{ marginLeft: 10, color: 'var(--blue)', fontWeight: 700 }}>ANO / NE</span>}
           {type === 'match' && <span style={{ marginLeft: 10, color: 'var(--gold)', fontWeight: 700 }}>PŘIŘAZOVÁNÍ</span>}
         </div>
