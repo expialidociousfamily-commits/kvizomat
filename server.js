@@ -21,6 +21,7 @@ app.use(express.json())
 // index.html must never be cached by CDN
 app.get('/', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  res.setHeader('Surrogate-Control', 'no-store')
   res.setHeader('Pragma', 'no-cache')
   res.sendFile(path.join(__dirname, 'dist', 'index.html'))
 })
