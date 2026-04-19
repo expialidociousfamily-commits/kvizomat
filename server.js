@@ -17,6 +17,7 @@ function getLocalIP() {
 const app = express()
 app.use(cors({ origin: '*' }))
 app.use(express.json())
+app.use(express.static('dist'))
 app.use(express.static('public'))
 
 const server = createServer(app)
