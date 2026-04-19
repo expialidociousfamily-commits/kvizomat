@@ -8,6 +8,7 @@ import SessionSummary from './components/SessionSummary'
 import ParentPanel from './components/ParentPanel'
 import { questions as defaultQuestions, PROFILES } from './data/questions'
 import { generateTeaching } from './utils/claude'
+const BACKEND = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3001'
 import './App.css'
 
 const PHASES = ['home', 'teaching', 'question', 'reveal', 'summary', 'parent']
@@ -116,6 +117,7 @@ export default function App() {
   }
 
   function handleHome() {
+    fetch(`${BACKEND}/api/end-round`, { method: 'POST' }).catch(() => {})
     setPhase('home')
     setCurrentQuestion(null)
     setAiExplanation('')

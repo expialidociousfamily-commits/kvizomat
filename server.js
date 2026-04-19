@@ -168,6 +168,13 @@ DŮLEŽITÉ: Odpověz POUZE čistým JSON objektem. Žádný text před ani po. 
   }
 })
 
+app.post('/api/end-round', (req, res) => {
+  gameState = { phase: 'waiting', question: null, answers: {} }
+  io.emit('game-state', gameState)
+  io.emit('round-ended')
+  res.json({ ok: true })
+})
+
 app.get('/ip', (req, res) => {
   res.json({
     url: process.env.RAILWAY_PUBLIC_DOMAIN
@@ -191,8 +198,9 @@ io.on('connection', (socket) => {
   })
 
   socket.on('end-question', () => {
-    gameState.phase = 'waiting'
+    gameState = { phase: 'waiting', question: null, answers: {} }
     io.emit('game-state', gameState)
+    io.emit('round-ended')
   })
 
   socket.emit('game-state', gameState)

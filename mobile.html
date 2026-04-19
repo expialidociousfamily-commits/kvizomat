@@ -138,11 +138,34 @@ let myMatchAnswers = {}   // tracks per-subitem answers for match questions
 const SOCKET_URL = 'https://kvizomat-production.up.railway.app'
 const socket = io(SOCKET_URL)
 
+function resetMobileUI() {
+  myAnswer = null
+  myAnAnswers = {}
+  myMatchAnswers = {}
+  if (!myProfile) { render(); return }
+  document.getElementById('app').innerHTML = `
+    <div class="player-badge">${myProfile.emoji} ${myProfile.name}</div>
+    <div class="status-card">
+      <div class="status-icon">⏳</div>
+      <div class="status-text">Čekáme na další otázku...</div>
+      <div class="status-sub">Připravte se na nové kolo!</div>
+    </div>
+    <button class="change-btn" onclick="myProfile=null;render()">Změnit hráče</button>
+  `
+}
+
+socket.on('round-ended', () => {
+  resetMobileUI()
+})
+
 socket.on('game-state', (state) => {
   const prevQId = gameState.question?.id
   gameState = state
   if (state.question?.id !== prevQId) { myAnswer = null; myAnAnswers = {}; myMatchAnswers = {} }
-  if (state.phase === 'waiting') { myAnswer = null; myAnAnswers = {}; myMatchAnswers = {} }
+  if (state.phase === 'waiting') {
+    resetMobileUI()
+    return
+  }
   render()
 })
 
