@@ -87,6 +87,8 @@ Začni přímo vysvětlením, bez úvodu jako "Samozřejmě!" nebo "Jasně!".`
 })
 
 app.post('/api/smartpaste', async (req, res) => {
+  console.log('smartpaste request přijat, délka textu:', req.body?.text?.length)
+  console.log('ANTHROPIC_API_KEY exists:', !!process.env.ANTHROPIC_API_KEY)
   const { text: rawText } = req.body
   if (!rawText) return res.status(400).json({ error: 'Chybí text' })
   if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'Chybí ANTHROPIC_API_KEY' })
@@ -155,7 +157,8 @@ Pokud nevíš správnou odpověď, nastav correct_option na "A" a answer_explana
 DŮLEŽITÉ: Odpověz POUZE čistým JSON objektem. Žádný text před ani po. Žádné markdown backticky. Jen { ... }`
 
   try {
-    const text = await callAnthropic(prompt, 600)
+    const text = await callAnthropic(prompt, 1000)
+    console.log('smartpaste AI response délka:', text?.length, 'preview:', text?.slice(0, 100))
     try {
       res.json(JSON.parse(text))
     } catch {
@@ -163,12 +166,12 @@ DŮLEŽITÉ: Odpověz POUZE čistým JSON objektem. Žádný text před ani po. 
       try {
         res.json(JSON.parse(clean))
       } catch (e) {
-        console.error('/api/smartpaste JSON parse failed:', e.message, '\nRaw:', text.slice(0, 200))
-        res.status(500).json({ error: 'JSON parse failed' })
+        console.error('/api/smartpaste JSON parse failed:', e.message, '\nRaw:', text.slice(0, 500))
+        res.status(500).json({ error: 'JSON parse failed', raw: text.slice(0, 200) })
       }
     }
   } catch (err) {
-    console.error('/api/smartpaste error:', err.message)
+    console.error('smartpaste error:', err.message, err.stack)
     res.status(500).json({ error: err.message })
   }
 })
