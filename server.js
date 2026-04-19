@@ -17,6 +17,14 @@ function getLocalIP() {
 const app = express()
 app.use(cors({ origin: '*' }))
 app.use(express.json())
+
+// index.html must never be cached by CDN
+app.get('/', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+  res.setHeader('Pragma', 'no-cache')
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'))
+})
+
 app.use(express.static('dist'))
 app.use(express.static('public'))
 
