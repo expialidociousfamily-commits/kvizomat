@@ -3,11 +3,15 @@ import { smartPaste } from '../utils/claude'
 import { PROFILES } from '../data/questions'
 
 const emptyManual = {
+  type: 'mc',
   subject: 'matematika', category: '', question: '',
   options: { A: '', B: '', C: '', D: '' },
   correct_option: 'A', answer: '', answer_explanation: '',
-  hints: [], difficulty: 2, emoji: '📝'
+  hints: [], difficulty: 2, emoji: '📝',
+  subitems: [{ id: '1', question: '', correct_option: 'A' }]
 }
+
+const inputStyle = { width: '100%', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: '1rem' }
 
 export default function ParentPanel({ questions, streak, points, onAddQuestion, onUpdateQuestion, onDeleteQuestion, onReorderQuestions, onUpdateResult, onUpdateStreak, onUpdatePoints, onClose }) {
   const [tab, setTab] = useState('queue')   // queue | add | results | settings
@@ -103,6 +107,7 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
   function startEdit(q) {
     setManualQ({
       id: q.id,
+      type: q.type || 'mc',
       subject: q.subject || 'matematika',
       category: q.category || '',
       question: q.question || '',
@@ -112,7 +117,8 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
       answer_explanation: q.answer_explanation || q.static_teaching_note || '',
       hints: q.hints || [],
       difficulty: q.difficulty || 2,
-      emoji: q.emoji || '📝'
+      emoji: q.emoji || '📝',
+      subitems: q.subitems || [{ id: '1', question: '', correct_option: 'A' }]
     })
     setTab('add')
   }
@@ -366,31 +372,60 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
           {/* Parsed result */}
           {parsed && (
             <div className="card fade-up" style={{ padding: '3% 4%', borderColor: 'var(--green)', marginBottom: 20 }}>
-              <div style={{ fontWeight: 800, color: 'var(--green)', marginBottom: 16 }}>✅ AI zparsovala otázku — zkontrolujte a uložte:</div>
+              <div style={{ fontWeight: 800, color: 'var(--green)', marginBottom: 16 }}>
+                ✅ AI zparsovala otázku ({parsed.type || 'mc'}) — zkontrolujte a uložte:
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                {[['Předmět', parsed.subject], ['Téma', parsed.category], ['Správná odpověď', parsed.correct_option], ['Obtížnost', parsed.difficulty + '/5']].map(([label, val]) => (
+                {[
+                  ['Předmět', parsed.subject],
+                  ['Téma', parsed.category],
+                  ['Typ', parsed.type || 'mc'],
+                  ['Obtížnost', parsed.difficulty + '/5']
+                ].map(([label, val]) => (
                   <div key={label}>
                     <div style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>{label}</div>
                     <div style={{ fontWeight: 700 }}>{val}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ marginBottom: 8 }}>
+              <div style={{ marginBottom: 12 }}>
                 <div style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>Otázka</div>
                 <div style={{ fontWeight: 700 }}>{parsed.question}</div>
               </div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                {Object.entries(parsed.options || {}).map(([k, v]) => (
-                  <div key={k} style={{
-                    flex: 1, padding: '8px 12px', borderRadius: 8,
-                    background: k === parsed.correct_option ? 'rgba(34,197,94,0.15)' : 'var(--bg)',
-                    border: '1px solid ' + (k === parsed.correct_option ? 'var(--green)' : 'var(--border)'),
-                    fontSize: '0.9rem'
-                  }}>
-                    <strong>{k}:</strong> {v}
-                  </div>
-                ))}
-              </div>
+
+              {/* MC / match: options preview */}
+              {(parsed.type === 'mc' || parsed.type === 'match' || !parsed.type) && parsed.options && (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+                  {Object.entries(parsed.options).map(([k, v]) => (
+                    <div key={k} style={{
+                      flex: '1 1 45%', padding: '8px 12px', borderRadius: 8,
+                      background: k === parsed.correct_option ? 'rgba(34,197,94,0.15)' : 'var(--bg)',
+                      border: '1px solid ' + (k === parsed.correct_option ? 'var(--green)' : 'var(--border)'),
+                      fontSize: '0.9rem'
+                    }}>
+                      <strong>{k}:</strong> {v}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* AN: subitems preview */}
+              {parsed.type === 'an' && parsed.subitems && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
+                  {parsed.subitems.map((si, idx) => (
+                    <div key={si.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--bg)', border: '1px solid var(--border)' }}>
+                      <span style={{ color: 'var(--muted)', minWidth: 20, fontSize: '0.85rem' }}>{idx + 1}.</span>
+                      <span style={{ flex: 1, fontSize: '0.9rem' }}>{si.question}</span>
+                      <span style={{
+                        padding: '3px 10px', borderRadius: 6, fontWeight: 800, fontSize: '0.85rem',
+                        background: si.correct_option === 'A' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)',
+                        color: si.correct_option === 'A' ? 'var(--green)' : 'var(--red)'
+                      }}>{si.correct_option === 'A' ? 'ANO' : 'NE'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div style={{ display: 'flex', gap: 12 }}>
                 <button className="btn btn-ghost" onClick={() => setParsed(null)} style={{ padding: '12px 24px', fontSize: '1rem' }}>
                   ✕ Zrušit
@@ -407,13 +442,20 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
             <div style={{ fontWeight: 800, fontSize: '1.2rem', marginBottom: 16, color: manualQ.id ? 'var(--gold)' : 'var(--muted)' }}>
               {manualQ.id ? '✏️ Upravit otázku' : '✏️ Nebo přidejte ručně'}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+            {/* Row 1: type + subject + category */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <div>
+                <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Typ otázky</label>
+                <select value={manualQ.type} onChange={e => setManualQ(q => ({ ...q, type: e.target.value }))} style={inputStyle}>
+                  <option value="mc">mc — výběr odpovědi</option>
+                  <option value="an">an — ano / ne</option>
+                  <option value="match">match — přiřazování</option>
+                </select>
+              </div>
               <div>
                 <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Předmět</label>
-                <select value={manualQ.subject} onChange={e => setManualQ(q => ({ ...q, subject: e.target.value }))} style={{
-                  width: '100%', background: 'var(--bg)', border: '1px solid var(--border)',
-                  borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: '1rem'
-                }}>
+                <select value={manualQ.subject} onChange={e => setManualQ(q => ({ ...q, subject: e.target.value }))} style={inputStyle}>
                   <option>matematika</option>
                   <option>čeština</option>
                 </select>
@@ -422,41 +464,105 @@ export default function ParentPanel({ questions, streak, points, onAddQuestion, 
                 <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Téma</label>
                 <input value={manualQ.category} onChange={e => setManualQ(q => ({ ...q, category: e.target.value }))}
                   placeholder="např. zlomky, pravopis..."
-                  style={{ width: '100%', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: '1rem' }} />
+                  style={inputStyle} />
               </div>
             </div>
-            <div style={{ marginTop: 16 }}>
-              <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Text otázky</label>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>
+                {manualQ.type === 'an' ? 'Úvodní text (instrukce)' : 'Text otázky'}
+              </label>
               <textarea value={manualQ.question} onChange={e => setManualQ(q => ({ ...q, question: e.target.value }))}
-                style={{ width: '100%', height: 80, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: '1rem', fontFamily: 'var(--font-body)', resize: 'none' }} />
+                style={{ ...inputStyle, height: 80, fontFamily: 'var(--font-body)', resize: 'none' }} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
-              {['A','B','C','D'].map(k => (
-                <div key={k}>
-                  <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 4 }}>Možnost {k}</label>
-                  <input value={manualQ.options[k]} onChange={e => setManualQ(q => ({ ...q, options: { ...q.options, [k]: e.target.value } }))}
-                    style={{ width: '100%', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: '0.95rem' }} />
+
+            {/* MC / match: options A–E */}
+            {(manualQ.type === 'mc' || manualQ.type === 'match') && (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                  {['A','B','C','D','E'].map(k => (
+                    <div key={k}>
+                      <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 4 }}>Možnost {k}</label>
+                      <input value={manualQ.options[k] || ''} onChange={e => setManualQ(q => ({ ...q, options: { ...q.options, [k]: e.target.value } }))}
+                        style={{ ...inputStyle, fontSize: '0.95rem', padding: '8px 12px' }} />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: 16, marginTop: 12 }}>
-              <div>
-                <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Správná</label>
-                <select value={manualQ.correct_option} onChange={e => setManualQ(q => ({ ...q, correct_option: e.target.value, answer: q.options[e.target.value] || '' }))}
-                  style={{ width: '100%', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px', color: 'var(--text)', fontSize: '1rem' }}>
-                  {['A','B','C','D'].map(k => <option key={k}>{k}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Vysvětlení</label>
-                <input value={manualQ.answer_explanation} onChange={e => setManualQ(q => ({ ...q, answer_explanation: e.target.value }))}
-                  placeholder="Krátké vysvětlení proč je tato odpověď správná..."
-                  style={{ width: '100%', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 14px', color: 'var(--text)', fontSize: '0.95rem' }} />
-              </div>
-            </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: 16, marginBottom: 16 }}>
+                  <div>
+                    <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Správná</label>
+                    <select value={manualQ.correct_option} onChange={e => setManualQ(q => ({ ...q, correct_option: e.target.value, answer: q.options[e.target.value] || '' }))}
+                      style={inputStyle}>
+                      {['A','B','C','D','E'].filter(k => manualQ.options[k]).map(k => <option key={k}>{k}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Vysvětlení</label>
+                    <input value={manualQ.answer_explanation} onChange={e => setManualQ(q => ({ ...q, answer_explanation: e.target.value }))}
+                      placeholder="Krátké vysvětlení proč je tato odpověď správná..."
+                      style={inputStyle} />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* AN: dynamic subitems */}
+            {manualQ.type === 'an' && (
+              <>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--muted)', marginBottom: 10 }}>Tvrzení:</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                  {manualQ.subitems.map((si, idx) => (
+                    <div key={si.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: 'var(--muted)', minWidth: 22, fontSize: '0.9rem', fontWeight: 700 }}>{idx + 1}.</span>
+                      <input
+                        value={si.question}
+                        onChange={e => setManualQ(q => ({
+                          ...q,
+                          subitems: q.subitems.map(s => s.id === si.id ? { ...s, question: e.target.value } : s)
+                        }))}
+                        placeholder="Text tvrzení..."
+                        style={{ ...inputStyle, flex: 1, padding: '8px 12px', fontSize: '0.95rem' }}
+                      />
+                      {/* A/N toggle */}
+                      {['A', 'N'].map(opt => (
+                        <button key={opt} onClick={() => setManualQ(q => ({
+                          ...q,
+                          subitems: q.subitems.map(s => s.id === si.id ? { ...s, correct_option: opt } : s)
+                        }))} style={{
+                          padding: '8px 14px', borderRadius: 8, border: '2px solid',
+                          borderColor: si.correct_option === opt ? (opt === 'A' ? 'var(--green)' : 'var(--red)') : 'var(--border)',
+                          background: si.correct_option === opt ? (opt === 'A' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') : 'transparent',
+                          color: si.correct_option === opt ? (opt === 'A' ? 'var(--green)' : 'var(--red)') : 'var(--muted)',
+                          fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.15s'
+                        }}>
+                          {opt === 'A' ? 'ANO' : 'NE'}
+                        </button>
+                      ))}
+                      <button onClick={() => setManualQ(q => ({ ...q, subitems: q.subitems.filter(s => s.id !== si.id) }))}
+                        style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: '#f87171', cursor: 'pointer', fontSize: '0.9rem' }}>
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button className="btn btn-ghost" onClick={() => setManualQ(q => ({
+                  ...q,
+                  subitems: [...q.subitems, { id: String(q.subitems.length + 1), question: '', correct_option: 'A' }]
+                }))} style={{ padding: '8px 18px', fontSize: '0.9rem', marginBottom: 16 }}>
+                  + Přidat tvrzení
+                </button>
+                <div>
+                  <label style={{ color: 'var(--muted)', fontSize: '0.85rem', display: 'block', marginBottom: 6 }}>Vysvětlení</label>
+                  <input value={manualQ.answer_explanation} onChange={e => setManualQ(q => ({ ...q, answer_explanation: e.target.value }))}
+                    placeholder="Souhrnné vysvětlení..."
+                    style={{ ...inputStyle, marginBottom: 16 }} />
+                </div>
+              </>
+            )}
+
             <button className="btn btn-gold" onClick={() => saveQuestion(manualQ)}
-              disabled={!manualQ.question || !manualQ.options.A}
-              style={{ marginTop: 16, padding: '14px 32px', fontSize: '1rem', opacity: manualQ.question ? 1 : 0.4 }}>
+              disabled={!manualQ.question || (manualQ.type !== 'an' && !manualQ.options.A)}
+              style={{ padding: '14px 32px', fontSize: '1rem', opacity: manualQ.question ? 1 : 0.4 }}>
               💾 Uložit otázku
             </button>
           </div>

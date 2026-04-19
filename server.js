@@ -91,24 +91,43 @@ app.post('/api/smartpaste', async (req, res) => {
   if (!rawText) return res.status(400).json({ error: 'Chybí text' })
   if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'Chybí ANTHROPIC_API_KEY' })
 
-  const prompt = `Zparsuj tuto testovou otázku a vrať POUZE JSON (žádný markdown, žádné backticky):
+  const prompt = `Zparsuj testovou otázku a urči její typ:
+- "mc" pokud má výběr jedné odpovědi z možností A–E
+- "an" pokud se ptá zda jsou tvrzení pravdivá (Ano/Ne, A/N, pravda/nepravda)
+- "match" pokud přiřazuje možnosti k položkám
 
 TEXT: ${rawText}
 
-Vrať JSON v tomto přesném formátu:
+Pro mc vrať:
 {
+  "type": "mc",
   "subject": "matematika" nebo "čeština",
   "category": "stručný název tématu",
   "difficulty": číslo 1-5,
   "question": "text otázky",
-  "options": {"A": "...", "B": "...", "C": "...", "D": "..."},
-  "correct_option": "A" nebo "B" nebo "C" nebo "D",
+  "options": {"A": "...", "B": "...", "C": "...", "D": "..."} (nebo A–E pokud 5 možností),
+  "correct_option": "A"–"E",
   "answer": "správná odpověď slovně",
   "answer_explanation": "krátké vysvětlení proč",
   "hints": ["hint 1", "hint 2"]
 }
 
-Pokud otázka nemá možnosti A/B/C/D, vymysli 3 věrohodné špatné odpovědi jako distraktory.
+Pro an vrať:
+{
+  "type": "an",
+  "subject": "matematika" nebo "čeština",
+  "category": "stručný název tématu",
+  "difficulty": číslo 1-5,
+  "question": "úvodní text otázky",
+  "subitems": [
+    {"id": "1", "question": "text tvrzení 1", "correct_option": "A" nebo "N"},
+    {"id": "2", "question": "text tvrzení 2", "correct_option": "A" nebo "N"}
+  ],
+  "answer_explanation": "krátké souhrnné vysvětlení",
+  "hints": ["hint 1", "hint 2"]
+}
+
+Pokud mc otázka nemá možnosti A/B/C/D, vymysli 3 věrohodné špatné odpovědi jako distraktory.
 Pokud nevíš správnou odpověď, nastav correct_option na "A" a answer_explanation na "Doplňte ručně".
 
 DŮLEŽITÉ: Odpověz POUZE čistým JSON objektem. Žádný text před ani po. Žádné markdown backticky. Jen { ... }`

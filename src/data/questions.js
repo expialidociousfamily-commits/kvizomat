@@ -1,6 +1,7 @@
 export const questions = [
   {
     id: "mat_001",
+    type: "mc",
     subject: "matematika",
     category: "zlomky",
     difficulty: 2,
@@ -15,6 +16,7 @@ export const questions = [
   },
   {
     id: "cj_001",
+    type: "mc",
     subject: "čeština",
     category: "pravopis",
     difficulty: 2,
@@ -34,6 +36,7 @@ export const questions = [
   },
   {
     id: "mat_002",
+    type: "mc",
     subject: "matematika",
     category: "slovní úlohy",
     difficulty: 3,
@@ -48,6 +51,7 @@ export const questions = [
   },
   {
     id: "cj_002",
+    type: "mc",
     subject: "čeština",
     category: "synonyma",
     difficulty: 2,
@@ -62,6 +66,7 @@ export const questions = [
   },
   {
     id: "mat_003",
+    type: "mc",
     subject: "matematika",
     category: "procenta",
     difficulty: 3,
@@ -73,6 +78,51 @@ export const questions = [
     answer_explanation: "25 % ze 400 Kč = 400 × 25 ÷ 100 = 100 Kč. Tato částka je sleva. Cena po slevě = 400 − 100 = 300 Kč.",
     hints: ["Nejdřív vypočítej kolik je 25% ze 400", "Pak odečti slevu od původní ceny"],
     static_teaching_note: "Procenta: p% z čísla X = X × p ÷ 100."
+  },
+  {
+    id: "cj_an_001",
+    type: "an",
+    subject: "čeština",
+    category: "pravopis",
+    difficulty: 2,
+    emoji: "✅",
+    question: "Rozhodněte, zda jsou věty napsány pravopisně správně:",
+    correct_option: ["A", "A", "A", "N", "A"],
+    answer_explanation: "Věty 1–3 a 5 jsou pravopisně správné. Věta 4 obsahuje chybu: správně má být 'příliš' (nikoli 'přiliš').",
+    hints: ["Soustřeďte se na vyjmenovaná slova a délku samohlásek", "Zkontrolujte předpony a přípony"],
+    static_teaching_note: "U ano/ne otázek hodnoťte každou větu samostatně.",
+    subitems: [
+      { id: "1", question: "Oba autobusy celou dobu blikaly světly.", correct_option: "A" },
+      { id: "2", question: "Kvůli mrazům lze očekávat neúrodu broskví.", correct_option: "A" },
+      { id: "3", question: "Nově omítnutou zeď kdosi pomaloval nápisy.", correct_option: "A" },
+      { id: "4", question: "Přiliš hlasitá hudba může poškodit sluch.", correct_option: "N" },
+      { id: "5", question: "Děti si hrály na dvoře až do večera.", correct_option: "A" }
+    ]
+  },
+  {
+    id: "mat_match_001",
+    type: "match",
+    subject: "matematika",
+    category: "geometrie",
+    difficulty: 2,
+    emoji: "📐",
+    question: "Přiřaďte ke každému geometrickému tvaru správný vzorec pro výpočet obsahu:",
+    correct_option: ["B", "D", "A", "C"],
+    options: {
+      A: "S = a × v / 2",
+      B: "S = a²",
+      C: "S = π × r²",
+      D: "S = a × b"
+    },
+    answer_explanation: "Čtverec: S = a². Obdélník: S = a × b. Trojúhelník: S = a × v / 2. Kruh: S = π × r².",
+    hints: ["U trojúhelníku nezapomeňte dělit dvěma", "Kruh používá číslo π"],
+    static_teaching_note: "Každý rovinný útvar má svůj vlastní vzorec pro obsah.",
+    subitems: [
+      { id: "1", question: "Čtverec", correct_option: "B" },
+      { id: "2", question: "Obdélník", correct_option: "D" },
+      { id: "3", question: "Trojúhelník", correct_option: "A" },
+      { id: "4", question: "Kruh", correct_option: "C" }
+    ]
   }
 ]
 

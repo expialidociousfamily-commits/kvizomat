@@ -91,13 +91,22 @@ export default function App() {
   }
 
   function handleRevealDone() {
-    const correct = currentQuestion.correct_option
+    const type = currentQuestion.type || 'mc'
     const newPoints = { ...points }
-    PROFILES.forEach(p => {
-      if (answers?.[p.id] === correct) newPoints[p.id] = (newPoints[p.id] || 0) + 10
-    })
     const results = {}
-    PROFILES.forEach(p => { results[p.id] = answers?.[p.id] === correct })
+
+    PROFILES.forEach(p => {
+      let correct
+      if (type === 'an') {
+        const ans = answers?.[p.id] || {}
+        correct = currentQuestion.subitems.every(si => ans[si.id] === si.correct_option)
+      } else {
+        correct = answers?.[p.id] === currentQuestion.correct_option
+      }
+      results[p.id] = correct
+      if (correct) newPoints[p.id] = (newPoints[p.id] || 0) + 10
+    })
+
     setQuestions(prev => prev.map(q =>
       q.id === currentQuestion.id ? { ...q, played: true, results } : q
     ))
